@@ -37,7 +37,7 @@ expect (see this thread: https://github.com/scipy/scipy/issues/2898).
 Option	      Default  	Description                    
 -----------------------------------------------------
 -f			: xvg file(s)
--o		op_avg	: name of outptut file
+-o	clustering_avg	: name of outptut file
 --membrane		: 'AM_zCter','AM_zNter','SMa' or 'SMz'
 --comments	@,#	: lines starting with these characters will be considered as comment
 
@@ -50,7 +50,7 @@ Other options
 
 #options
 parser.add_argument('-f', nargs='+', dest='xvgfilenames', help=argparse.SUPPRESS, required=True)
-parser.add_argument('-o', nargs=1, dest='output_file', default=["op_avg"], help=argparse.SUPPRESS)
+parser.add_argument('-o', nargs=1, dest='output_file', default=["clustering_avg"], help=argparse.SUPPRESS)
 parser.add_argument('--membrane', dest='membrane', choices=['AM_zCter','AM_zNter','SMa','SMz'], default='not specified', help=argparse.SUPPRESS, required=True)
 parser.add_argument('--comments', nargs=1, dest='comments', default=['@,#'], help=argparse.SUPPRESS)
 
@@ -259,7 +259,7 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_upper_POPC[r,f_index + 1]):
+			if np.isnan(data_clustering_upper_POPC[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
 				nb_files_upper_POPC[r,0] -= 1
 	weights_upper_POPC_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
@@ -274,9 +274,9 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_upper_POPE[r,f_index + 1]):
+			if np.isnan(data_clustering_upper_POPE[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
-				nb_files_upper_POPE[r,0] -= 1
+				nb_files_upper_POPE[r,0] -= 1	
 	weights_upper_POPE_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
 	weights_upper_POPE_nan_sq[:,0] = np.nansum(tmp_weights_nan**2, axis = 1)	
 	weights_upper_POPE_nan[weights_upper_POPE_nan == 0] = 1
@@ -289,7 +289,7 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_upper_POPS[r,f_index + 1]):
+			if np.isnan(data_clustering_upper_POPS[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
 				nb_files_upper_POPS[r,0] -= 1
 	weights_upper_POPS_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
@@ -306,7 +306,7 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_lower_POPC[r,f_index + 1]):
+			if np.isnan(data_clustering_lower_POPC[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
 				nb_files_lower_POPC[r,0] -= 1
 	weights_lower_POPC_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
@@ -321,7 +321,7 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_lower_POPE[r,f_index + 1]):
+			if np.isnan(data_clustering_lower_POPE[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
 				nb_files_lower_POPE[r,0] -= 1
 	weights_lower_POPE_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
@@ -336,7 +336,7 @@ def calculate_avg():													#DONE
 	for r in range(0, nb_rows):
 		tmp_weights_nan[r,:] = weights
 		for f_index in range(0, len(args.xvgfilenames)):
-			if np.isnan(data_clustering_lower_POPS[r,f_index + 1]):
+			if np.isnan(data_clustering_lower_POPS[r,f_index]):
 				tmp_weights_nan[r,f_index] = 0
 				nb_files_lower_POPS[r,0] -= 1
 	weights_lower_POPS_nan[:,0] = np.nansum(tmp_weights_nan, axis = 1)
@@ -368,52 +368,95 @@ def calculate_avg():													#DONE
 	#-------------------------------------------------------------
 	if args.membrane in ["AM_zCter","AM_zNter"]:
 		tmp_upper_POPC = np.zeros((nb_rows, 1))
-		tmp_upper_POPC[:,0] = np.nansum(weights * (data_clustering_upper_POPC - avg_clustering_upper_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / (weights_upper_POPC_nan)**2 - weights_upper_POPC_nan_sq) * tmp_upper_POPC)
+		tmp_upper_POPC[:,0] = np.nansum(weights * (data_clustering_upper_POPC - avg_clustering_upper_POPC[:,0:1])**2, axis = 1)			
+		tmp_div = np.copy((weights_upper_POPC_nan)**2 - weights_upper_POPC_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / tmp_div * tmp_upper_POPC)
+
 		tmp_upper_POPE = np.zeros((nb_rows, 1))
 		tmp_upper_POPE[:,0] = np.nansum(weights * (data_clustering_upper_POPE - avg_clustering_upper_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / (weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq) * tmp_upper_POPE)
+		tmp_div = np.copy((weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / tmp_div * tmp_upper_POPE)
+
 		tmp_lower_POPC = np.zeros((nb_rows, 1))
 		tmp_lower_POPC[:,0] = np.nansum(weights * (data_clustering_lower_POPC - avg_clustering_lower_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / (weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq) * tmp_lower_POPC)
+		tmp_div = np.copy((weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / tmp_div * tmp_lower_POPC)
+
 		tmp_lower_POPE = np.zeros((nb_rows, 1))
 		tmp_lower_POPE[:,0] = np.nansum(weights * (data_clustering_lower_POPE - avg_clustering_lower_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / (weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq) * tmp_lower_POPE)
+		tmp_div = np.copy((weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / tmp_div * tmp_lower_POPE)
+
 		tmp_lower_POPS = np.zeros((nb_rows, 1))
 		tmp_lower_POPS[:,0] = np.nansum(weights * (data_clustering_lower_POPS - avg_clustering_lower_POPS[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPS = np.sqrt(weights_lower_POPS_nan / (weights_lower_POPS_nan)**2 - weights_lower_POPS_nan_sq) * tmp_lower_POPS)
+		tmp_div = np.copy((weights_lower_POPS_nan)**2 - weights_lower_POPS_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPS = np.sqrt(weights_lower_POPS_nan / tmp_div * tmp_lower_POPS)
+	
 	elif args.membrane == "SMa":
 		tmp_upper_POPC = np.zeros((nb_rows, 1))
 		tmp_upper_POPC[:,0] = np.nansum(weights * (data_clustering_upper_POPC - avg_clustering_upper_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / (weights_upper_POPC_nan)**2 - weights_upper_POPC_nan_sq) * tmp_upper_POPC)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / tmp_div * tmp_upper_POPC)
+		
 		tmp_upper_POPE = np.zeros((nb_rows, 1))
 		tmp_upper_POPE[:,0] = np.nansum(weights * (data_clustering_upper_POPE - avg_clustering_upper_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / (weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq) * tmp_upper_POPE)
+		tmp_div = np.copy((weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / tmp_div * tmp_upper_POPE)
+		
 		tmp_upper_POPS = np.zeros((nb_rows, 1))
 		tmp_upper_POPS[:,0] = np.nansum(weights * (data_clustering_upper_POPS - avg_clustering_upper_POPS[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPS = np.sqrt(weights_upper_POPS_nan / (weights_upper_POPS_nan)**2 - weights_upper_POPS_nan_sq) * tmp_upper_POPS)
+		tmp_div = np.copy((weights_upper_POPS_nan)**2 - weights_upper_POPS_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPS = np.sqrt(weights_upper_POPS_nan / tmp_div * tmp_upper_POPS)
+		
 		tmp_lower_POPC = np.zeros((nb_rows, 1))
 		tmp_lower_POPC[:,0] = np.nansum(weights * (data_clustering_lower_POPC - avg_clustering_lower_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / (weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq) * tmp_lower_POPC)
+		tmp_div = np.copy((weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / tmp_div * tmp_lower_POPC)
+		
 		tmp_lower_POPE = np.zeros((nb_rows, 1))
 		tmp_lower_POPE[:,0] = np.nansum(weights * (data_clustering_lower_POPE - avg_clustering_lower_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / (weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq) * tmp_lower_POPE)
+		tmp_div = np.copy((weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / tmp_div * tmp_lower_POPE)
+		
 		tmp_lower_POPS = np.zeros((nb_rows, 1))
 		tmp_lower_POPS[:,0] = np.nansum(weights * (data_clustering_lower_POPS - avg_clustering_lower_POPS[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPS = np.sqrt(weights_lower_POPS_nan / (weights_lower_POPS_nan)**2 - weights_lower_POPS_nan_sq) * tmp_lower_POPS)
+		tmp_div = np.copy((weights_lower_POPS_nan)**2 - weights_lower_POPS_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPS = np.sqrt(weights_lower_POPS_nan / tmp_div * tmp_lower_POPS)
+	
 	elif args.membrane == "SMz":
 		tmp_upper_POPC = np.zeros((nb_rows, 1))
 		tmp_upper_POPC[:,0] = np.nansum(weights * (data_clustering_upper_POPC - avg_clustering_upper_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / (weights_upper_POPC_nan)**2 - weights_upper_POPC_nan_sq) * tmp_upper_POPC)
+		tmp_div = np.copy((weights_upper_POPC_nan)**2 - weights_upper_POPC_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPC = np.sqrt(weights_upper_POPC_nan / tmp_div * tmp_upper_POPC)
+		
 		tmp_upper_POPE = np.zeros((nb_rows, 1))
 		tmp_upper_POPE[:,0] = np.nansum(weights * (data_clustering_upper_POPE - avg_clustering_upper_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / (weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq) * tmp_upper_POPE)
+		tmp_div = np.copy((weights_upper_POPE_nan)**2 - weights_upper_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_upper_POPE = np.sqrt(weights_upper_POPE_nan / tmp_div * tmp_upper_POPE)
+		
 		tmp_lower_POPC = np.zeros((nb_rows, 1))
 		tmp_lower_POPC[:,0] = np.nansum(weights * (data_clustering_lower_POPC - avg_clustering_lower_POPC[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / (weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq) * tmp_lower_POPC)
+		tmp_div = np.copy((weights_lower_POPC_nan)**2 - weights_lower_POPC_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPC = np.sqrt(weights_lower_POPC_nan / tmp_div * tmp_lower_POPC)
+
 		tmp_lower_POPE = np.zeros((nb_rows, 1))
 		tmp_lower_POPE[:,0] = np.nansum(weights * (data_clustering_lower_POPE - avg_clustering_lower_POPE[:,0:1])**2, axis = 1)	
-		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / (weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq) * tmp_lower_POPE)
+		tmp_div = np.copy((weights_lower_POPE_nan)**2 - weights_lower_POPE_nan_sq)
+		tmp_div[tmp_div == 0] = 1
+		std_clustering_lower_POPE = np.sqrt(weights_lower_POPE_nan / tmp_div * tmp_lower_POPE)
 
 	return
 
